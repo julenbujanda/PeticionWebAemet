@@ -11,7 +11,10 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
 
 public class PeticionWeb {
 
@@ -38,28 +41,25 @@ public class PeticionWeb {
     }
 
     public static int seleccionarProvincia() throws SQLException {
-        HashMap<Integer, Integer> idsProvincia = new HashMap<>();
         System.out.println("Seleccionar provincia:");
         ResultSet resultSet = connection.prepareStatement("SELECT id, provincia FROM provincias;").executeQuery();
-        int num = 0;
         while (resultSet.next()) {
-            System.out.println(++num + ") " + resultSet.getString(2));
-            idsProvincia.put(num, resultSet.getInt(1));
+            System.out.println(resultSet.getInt(1) + ") " + resultSet.getString(2));
         }
-        return idsProvincia.get(scanner.nextInt());
+        return scanner.nextInt();
     }
 
     public static int seleccionarMunicipio(int idProvincia) throws SQLException {
-        HashMap<Integer, Integer> idsMunicipio = new HashMap<>();
         System.out.println("Seleccionar municipio:");
         ResultSet resultSet = connection.prepareStatement(
-                "SELECT id, municipio FROM municipios WHERE provincia_id = " + idProvincia + ";").executeQuery();
+                "SELECT @rownum := @rownum + 1 as row_number, id, municipio FROM municipios" +
+                        " cross join (select @rownum := 0) r" +
+                        " WHERE provincia_id = " + idProvincia + " order by id ;").executeQuery();
         int num = 0;
         while (resultSet.next()) {
-            System.out.println(++num + ") " + resultSet.getString(2));
-            idsMunicipio.put(num, resultSet.getInt(1));
+            System.out.println(resultSet.getInt(1) + ") " + resultSet.getString(3));
         }
-        return idsMunicipio.get(scanner.nextInt());
+        return scanner.nextInt();
     }
 
     private static Document leerXML(int idProvincia, int idMunicipio) {
@@ -68,6 +68,7 @@ public class PeticionWeb {
         SAXBuilder saxBuilder = new SAXBuilder();
         Document document = null;
         try {
+            System.out.println("http://www.aemet.es/xml/municipios/localidad_" + strProvincia + strMunicipio + ".xml");
             URL url = new URL("http://www.aemet.es/xml/municipios/localidad_" + strProvincia + strMunicipio + ".xml");
             ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
             FileOutputStream fileOutputStream = new FileOutputStream("./localidad.xml");
