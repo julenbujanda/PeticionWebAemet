@@ -15,23 +15,33 @@ public class PeticionWeb {
 
     private static Scanner scanner;
 
-    private static HashMap<Integer, String> provincias;
+    //private static HashMap<Integer, String> provincias;
 
     public static int seleccionarProvincia() throws SQLException {
-        System.out.println("Seleccionar Provincia:");
+        System.out.println("Seleccionar provincia:");
         ResultSet resultSet = connection.prepareStatement("SELECT id, provincia FROM provincias;").executeQuery();
         while (resultSet.next()) {
             int idProvincia = resultSet.getInt(1);
             String nombreProvincia = resultSet.getString(2);
-            provincias.put(idProvincia, nombreProvincia);
+            //provincias.put(idProvincia, nombreProvincia);
             System.out.println(idProvincia + ") " + nombreProvincia);
+        }
+        return scanner.nextInt();
+    }
+
+    public static int seleccionarMunicipio(int idProvincia) throws SQLException {
+        System.out.println("Seleccionar municipio:");
+        ResultSet resultSet = connection.prepareStatement(
+                "SELECT id, municipio FROM municipios WHERE provincia_id = " + idProvincia + ";").executeQuery();
+        while (resultSet.next()) {
+            System.out.println(resultSet.getInt(1) + ") " + resultSet.getString(2));
         }
         return scanner.nextInt();
     }
 
     public static void main(String[] args) throws Exception {
         propiedades = new Properties();
-        provincias = new HashMap<>();
+        //provincias = new HashMap<>();
         scanner = new Scanner(System.in);
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
