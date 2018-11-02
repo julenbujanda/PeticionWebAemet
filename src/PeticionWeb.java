@@ -3,6 +3,7 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import java.awt.*;
 import java.io.*;
 import java.net.URL;
 import java.nio.channels.Channels;
@@ -11,10 +12,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.LinkedList;
+import java.util.*;
 import java.util.List;
-import java.util.Properties;
-import java.util.Scanner;
 
 public class PeticionWeb {
 
@@ -25,7 +24,6 @@ public class PeticionWeb {
 
     public static void main(String[] args) throws Exception {
         propiedades = new Properties();
-        //provincias = new HashMap<>();
         scanner = new Scanner(System.in);
         try {
             Class.forName("com.mysql.cj.jdbc.Driver");
@@ -38,11 +36,13 @@ public class PeticionWeb {
         int idProvincia = seleccionarProvincia();
         int idMunicipio = seleccionarMunicipio(idProvincia);
         generarFichero(generarHTML(parsearXML(leerXML(idProvincia, idMunicipio))));
+        Desktop.getDesktop().browse(new File("localidad.html").toURI());
     }
 
     public static int seleccionarProvincia() throws SQLException {
         System.out.println("Seleccionar provincia:");
-        ResultSet resultSet = connection.prepareStatement("SELECT id, provincia FROM provincias;").executeQuery();
+        ResultSet resultSet = connection.prepareStatement("SELECT id_provincia, provincia FROM provincias" +
+                " ORDER BY id_provincia;").executeQuery();
         while (resultSet.next()) {
             System.out.println(resultSet.getInt(1) + ") " + resultSet.getString(2));
         }
@@ -52,14 +52,17 @@ public class PeticionWeb {
     public static int seleccionarMunicipio(int idProvincia) throws SQLException {
         System.out.println("Seleccionar municipio:");
         ResultSet resultSet = connection.prepareStatement(
-                "SELECT @rownum := @rownum + 1 as row_number, id, municipio FROM municipios" +
-                        " cross join (select @rownum := 0) r" +
-                        " WHERE provincia_id = " + idProvincia + " order by id ;").executeQuery();
-        int num = 0;
+                "SELECT cod_municipio, nombre FROM municipios" +
+                        " WHERE id_provincia = " + idProvincia + " order by cod_municipio ;").executeQuery();
+        int num = 1;
+        HashMap<Integer, Integer> idMunicipios = new HashMap<>();
         while (resultSet.next()) {
-            System.out.println(resultSet.getInt(1) + ") " + resultSet.getString(3));
+            idMunicipios.put(num, resultSet.getInt(1));
+            System.out.println(num + ") " + resultSet.getString(2));
+            num++;
         }
-        return scanner.nextInt();
+        int respuesta = scanner.nextInt();
+        return idMunicipios.get(respuesta);
     }
 
     private static Document leerXML(int idProvincia, int idMunicipio) {
